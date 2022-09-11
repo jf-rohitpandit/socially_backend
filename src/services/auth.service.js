@@ -32,6 +32,34 @@ const createUser = async (email, password) => {
 }
 
 
+const loginUser = async (email, password)=>{
+    try {
+
+        let existingUserQuery = `select email, password from public."User" where email = '${email}'`;
+        let existingUser = await pool.query(existingUserQuery);
+        if(existingUser.rows?.length < 1){
+            return {status: 400, message: "Invalid Email or password!", body: []}
+        }
+
+        existingUser = existingUser.rows[0];
+
+        const id = uuid();
+        const isPasswordSame = await bcrypt.compare(password, existingUser.password);
+        if(!isPasswordSame){
+            return {status: 400, message: "Invalid Email or password!", body: []}
+        }
+        
+        let token = jwt.sign({id:id},process.env.JWT_SECRET)
+
+        return {status: 201, message:"Login successful", body:[token]}   
+    } catch (error) {
+        console.log("error in login user: ", error);
+        return {status: 500, message: "Some internal error occured!", body: []}
+    }
+}
+
+
 module.exports = {
-    createUser
+    createUser,
+    loginUser
 }
